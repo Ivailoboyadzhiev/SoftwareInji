@@ -6,11 +6,12 @@ from datetime import datetime
 
 app = FastAPI(title="File Storage API", version="1.0.0")
 
-# Directory where files will be stored
+
 STORAGE_DIR = Path("storage")
 STORAGE_DIR.mkdir(exist_ok=True)
+#new comment
 
-# Counter for files stored (initialize with existing files count)
+
 def get_file_count():
     return len([f for f in STORAGE_DIR.iterdir() if f.is_file()])
 
