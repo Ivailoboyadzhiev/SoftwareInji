@@ -27,6 +27,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           pip install locust
+          pip install httpx
 
       - name: Run Unit Tests
         run: pytest -v
