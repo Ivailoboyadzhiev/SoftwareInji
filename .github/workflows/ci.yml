@@ -1,0 +1,60 @@
+name: CI/CD Pipeline
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  # ----------------------------
+  # Continuous Integration (PR)
+  # ----------------------------
+  ci:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install locust
+
+      - name: Run Unit Tests
+        run: pytest -v
+
+      - name: Run short Locust load test
+        run: |
+          # Start FastAPI app in background
+          uvicorn main:app --host 0.0.0.0 --port 8000 &
+          # Give server 5 seconds to start
+          sleep 5
+          # Run Locust headless
+          locust --headless -u 10 -r 5 -t 30s -H http://localhost:8000
+
+  # ----------------------------
+  # Continuous Deployment (main branch)
+  # ----------------------------
+  cd:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t myapp:latest .
+          # Tag image with Git SHA
+          docker tag myapp:latest myapp:${{ github.sha }}
